@@ -1,2 +1,2 @@
 # 21daysofREACT
-A journal of what I created within 21 days of learning REACT from scratch
+A journal of what I created within my first 21 days of building with REACT
