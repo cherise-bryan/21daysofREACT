@@ -2,7 +2,8 @@ import React from 'react';
 import ReactDOM from 'react-dom'; // these need to be here or npm start will fail
 import './index.css'; // brings in css styles
 
-// WHERE I STOPPED: https://facebook.github.io/react/tutorial/tutorial.html#storing-a-history
+// WHERE I STOPPED: https://facebook.github.io/react/tutorial/tutorial.html#showing-the-moves
+// TODO: https://facebook.github.io/react/blog/2014/01/02/react-chrome-developer-tools.html
 
 function Square(props) {
     return (
@@ -14,16 +15,7 @@ function Square(props) {
 }
 
 class Board extends React.Component {
-    constructor() {
-        super();
-        this.state = {
-        squares: Array(9).fill(null),
-        xIsNext: true,
-        numXs: 0,
-        numOs: 0,
-        };
-    }
-    //value={this.state.squares[i]} previously
+
     renderSquare(i) {
         return(
                <Square
@@ -32,48 +24,11 @@ class Board extends React.Component {
                />
         );
     }
-    
-    handleClick(i) {
-        /* TODO: learn about slice() function in js */
-        
-        const squares = this.state.squares.slice(); // without a number slices all item
-        let validMove = false;
 
-        if (!(squares[i] || calculateWinner(this.state.squares,
-                                            this.state.numOs,
-                                            this.state.numXs))) {
-            squares[i] = this.state.xIsNext ? 'X' : 'O';
-            validMove = true;
-        }
-        /* TODO: familiarize myself with React.Component */
-        
-        /* this.setState({squares: squares, xIsNext: false});  <== not correct because it
-         does not take into consideration when xIsNext is already false...
-         */
-        
-        // NOTE: setState is inherited from React.Component
-        if (validMove) {
-            this.setState({squares: squares,
-                          xIsNext: !this.state.xIsNext,
-                          numXs: this.state.numXs + (this.state.xIsNext ? 0 : 1),
-                          numOs: this.state.numOs + (this.state.xIsNext ? 1 : 0),
-                          });
-        }
-    }
-
-    /*render() {
-        const winner = this.calculateWinner(this.state.squares); // const cannot be updated
-        let status; // let can be updated (both block scope rather than function scope)
-        if (winner) {
-            status = 'Winner is ' + winner;
-        } else if ((this.state.numXs + this.state.numOs) < 9){
-            status = 'Next player: ' + (this.state.xIsNext ? 'X' : 'O'); // brackets are neccessary
-        } else {
-            status = 'Out of moves! 😣';
-        }
+    // multiple render's are allowed
+    render() {
         return (
                 <div>
-                <div className="status"></div>
                 <div className="board-row">
                 {this.renderSquare(0)}
                 {this.renderSquare(1)}
@@ -92,12 +47,13 @@ class Board extends React.Component {
                 </div>
                 );
      
-    }*/
+    }
 }
 
 // moved state up from Board -> Game to keep track of the history of the state of the Board
 class Game extends React.Component {
     // constructor is needed to save states
+    // only one constructor is allowed
     constructor() {
         super();
         this.state = {
@@ -105,33 +61,71 @@ class Game extends React.Component {
                   squares: Array(9).fill(null),
                   }],
         xIsNext: true,
+        gameOver: false,
         numXs: 0,
         numOs: 0,
         };
     }
+    handleClick(i) {
+        /* TODO: learn about slice() function in js */
+        const history = this.state.history;
+        const current = history[history.length - 1];
+        const squares = current.squares.slice();
+        
+        let validMove = false;
+        
+        if (!squares[i] && !this.state.gameOver) {
+            squares[i] = this.state.xIsNext ? 'X' : 'O';
+            validMove = true;
+        }
+        /* TODO: familiarize myself with React.Component */
+        
+        /* this.setState({squares: squares, xIsNext: false});  <== not correct because it
+         does not take into consideration when xIsNext is already false...
+         */
+        
+        // NOTE: setState is inherited from React.Component
+        if (validMove) {
+            this.setState({history: history.concat([{squares: squares}]),
+                          xIsNext: !this.state.xIsNext,
+                          numXs: this.state.numXs + (this.state.xIsNext ? 0 : 1),
+                          numOs: this.state.numOs + (this.state.xIsNext ? 1 : 0),
+                          gameOver: this.state.gameOver,
+                          });
+        }
+    }
     render() {
         const history = this.state.history;
         const current = history[history.length - 1];
-        const winner = calculateWinner(current.squares); // const cannot be updated
+        const winner = calculateWinner(current.squares,
+                                       this.state.numOs,
+                                       this.state.numXs); // const cannot be updated
         
         let status; // let can be updated (both block scope rather than function scope)
         if (winner) {
             status = 'Winner is ' + winner;
+            this.setState({history: history,
+                          xIsNext: this.state.xIsNext,
+                          numXs: this.state.numXs,
+                          numOs: this.state.numOs,
+                          gameOver: true,
+                          });
         } else if ((this.state.numXs + this.state.numOs) < 9){
-            status = 'Next player: ' + (this.state.xIsNext ? 'X' : 'O'); // brackets are neccessary
+            status = 'Next player: ' + (this.state.xIsNext ? 'X' : 'O');
         } else {
             status = 'Out of moves! 😣';
         }
+        // just <div>status</status> displays the literal text status
         return (
                 <div className="game">
                 <div className="game-board">
                 <Board
                 squares={current.squares}
-                
+                onClick={(i) => this.handleClick(i)}
                 />
                 </div>
                 <div className="game-info">
-                <div>status</div>
+                <div>{status}</div>
                 <ol>{/* TODO */}</ol>
                 </div>
                 </div>
@@ -139,7 +133,6 @@ class Game extends React.Component {
     }
 }
 
-// ========================================
 ReactDOM.render(
                 <Game />,
                 document.getElementById('root')
