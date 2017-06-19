@@ -7,7 +7,7 @@ import './index.css'; // brings in css styles
 
 function Square(props) {
     return (
-            /* TODO: find out difference between props.onClick() and props.onClick */
+           // TODO: find out difference between props.onClick() and props.onClick
             <button className="square" onClick={props.onClick}>
             {props.value}
             </button>
@@ -61,7 +61,6 @@ class Game extends React.Component {
                   squares: Array(9).fill(null),
                   }],
         xIsNext: true,
-        gameOver: false,
         numXs: 0,
         numOs: 0,
         };
@@ -72,44 +71,30 @@ class Game extends React.Component {
         const current = history[history.length - 1];
         const squares = current.squares.slice();
         
-        let validMove = false;
-        
-        if (!squares[i] && !this.state.gameOver) {
-            squares[i] = this.state.xIsNext ? 'X' : 'O';
-            validMove = true;
+        if (calculateWinner(squares, this.state.numOs, this.state.numXs) || squares[i]) {
+            return;
         }
-        /* TODO: familiarize myself with React.Component */
+
+        squares[i] = this.state.xIsNext ? 'X' : 'O';
+
+        this.setState({history: history.concat([{squares: squares}]),
+                      xIsNext: !this.state.xIsNext,
+                      numXs: this.state.numXs + (this.state.xIsNext ? 0 : 1),
+                      numOs: this.state.numOs + (this.state.xIsNext ? 1 : 0),
+                      });
         
-        /* this.setState({squares: squares, xIsNext: false});  <== not correct because it
-         does not take into consideration when xIsNext is already false...
-         */
-        
-        // NOTE: setState is inherited from React.Component
-        if (validMove) {
-            this.setState({history: history.concat([{squares: squares}]),
-                          xIsNext: !this.state.xIsNext,
-                          numXs: this.state.numXs + (this.state.xIsNext ? 0 : 1),
-                          numOs: this.state.numOs + (this.state.xIsNext ? 1 : 0),
-                          gameOver: this.state.gameOver,
-                          });
-        }
     }
     render() {
         const history = this.state.history;
         const current = history[history.length - 1];
         const winner = calculateWinner(current.squares,
-                                       this.state.numOs,
-                                       this.state.numXs); // const cannot be updated
+                                       this.numOs,
+                                       this.numXs
+                                       ); // const cannot be updated
         
         let status; // let can be updated (both block scope rather than function scope)
         if (winner) {
-            status = 'Winner is ' + winner;
-            this.setState({history: history,
-                          xIsNext: this.state.xIsNext,
-                          numXs: this.state.numXs,
-                          numOs: this.state.numOs,
-                          gameOver: true,
-                          });
+            status = 'Winner is ' + winner; // do not set state to what is already was ==== callstack size exceeded error
         } else if ((this.state.numXs + this.state.numOs) < 9){
             status = 'Next player: ' + (this.state.xIsNext ? 'X' : 'O');
         } else {
@@ -118,16 +103,16 @@ class Game extends React.Component {
         // just <div>status</status> displays the literal text status
         return (
                 <div className="game">
-                <div className="game-board">
-                <Board
-                squares={current.squares}
-                onClick={(i) => this.handleClick(i)}
-                />
-                </div>
-                <div className="game-info">
-                <div>{status}</div>
-                <ol>{/* TODO */}</ol>
-                </div>
+                    <div className="game-board">
+                        <Board
+                        squares={current.squares}
+                        onClick={(i) => this.handleClick(i)}
+                        />
+                        </div>
+                        <div className="game-info">
+                        <div>{status}</div>
+                        <ol>{/* TODO */}</ol>
+                    </div>
                 </div>
                 );
     }
@@ -149,12 +134,11 @@ function calculateWinner(squares, numOs, numXs) {
                    [0, 4, 8],
                    [2, 4, 6],
                    ];
-    if ((numOs >= 3) || (numXs >= 3)) {
-        for (let i = 0; i < lines.length; i++) {
-            const [a, b, c] = lines[i];
-            if (squares[a] && squares[a] === squares[b] && squares[a] === squares[c]) {
-                return squares[a];
-            }
+
+    for (let i = 0; i < lines.length; i++) {
+        const [a, b, c] = lines[i];
+        if (squares[a] && squares[a] === squares[b] && squares[a] === squares[c]) {
+            return squares[a];
         }
     }
     return null;
