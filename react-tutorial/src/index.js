@@ -2,7 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom'; // these need to be here or npm start will fail
 import './index.css'; // brings in css styles
 
-// WHERE I STOPPED: https://facebook.github.io/react/tutorial/tutorial.html#showing-the-moves
+// WHERE I STOPPED: https://facebook.github.io/react/tutorial/tutorial.html#wrapping-up
 // TODO: https://facebook.github.io/react/blog/2014/01/02/react-chrome-developer-tools.html
 
 function Square(props) {
@@ -61,17 +61,17 @@ class Game extends React.Component {
                   squares: Array(9).fill(null),
                   }],
         xIsNext: true,
+        stepNumber: 0,
         numXs: 0,
         numOs: 0,
         };
     }
     handleClick(i) {
-        /* TODO: learn about slice() function in js */
-        const history = this.state.history;
-        const current = history[history.length - 1];
+        const history = this.state.history.slice(0, this.state.stepNumber + 1);
+        const current = history[this.state.stepNumber];
         const squares = current.squares.slice();
         
-        if (calculateWinner(squares, this.state.numOs, this.state.numXs) || squares[i]) {
+        if (calculateWinner(squares) || squares[i]) {
             return;
         }
 
@@ -79,28 +79,46 @@ class Game extends React.Component {
 
         this.setState({history: history.concat([{squares: squares}]),
                       xIsNext: !this.state.xIsNext,
-                      numXs: this.state.numXs + (this.state.xIsNext ? 0 : 1),
-                      numOs: this.state.numOs + (this.state.xIsNext ? 1 : 0),
+                      stepNumber: history.length,
+                      numXs: this.state.numXs + (this.state.xIsNext ? 1 : 0),
+                      numOs: this.state.numOs + (this.state.xIsNext ? 0 : 1),
                       });
         
     }
+    jumpTo(step) {
+        this.setState({
+                      stepNumber: step,
+                      xIsNext: (step % 2) ? false : true,
+                      numOs: Math.floor(step/2),
+                      numXs: (step % 2) ? Math.floor(step/2) + 1 : step/2,
+                      });
+    }
     render() {
         const history = this.state.history;
-        const current = history[history.length - 1];
-        const winner = calculateWinner(current.squares,
-                                       this.numOs,
-                                       this.numXs
-                                       ); // const cannot be updated
+        const current = history[this.state.stepNumber];
+        const winner = calculateWinner(current.squares
+                                       );
+        const moves = history.map((step, move) => {
+                                  const now = move ? 'Move #' + move : 'Game start';
+                                  const x = ' ' + this.state.numXs.toString();
+                                  const o = ' ' + this.state.numOs.toString();
+                                  return (
+                                          <li key={move}>
+                                          <a href="#" onClick={() => this.jumpTo(move)}>
+                                          {now}
+                                          </a>
+                                  </li>
+                                  )
+                                  });
         
-        let status; // let can be updated (both block scope rather than function scope)
+        let status;
         if (winner) {
-            status = 'Winner is ' + winner; // do not set state to what is already was ==== callstack size exceeded error
+            status = 'Winner is ' + winner;
         } else if ((this.state.numXs + this.state.numOs) < 9){
             status = 'Next player: ' + (this.state.xIsNext ? 'X' : 'O');
         } else {
             status = 'Out of moves! 😣';
         }
-        // just <div>status</status> displays the literal text status
         return (
                 <div className="game">
                     <div className="game-board">
@@ -111,7 +129,7 @@ class Game extends React.Component {
                         </div>
                         <div className="game-info">
                         <div>{status}</div>
-                        <ol>{/* TODO */}</ol>
+                <ol>{moves}</ol>
                     </div>
                 </div>
                 );
@@ -123,7 +141,7 @@ ReactDOM.render(
                 document.getElementById('root')
                 );
 
-function calculateWinner(squares, numOs, numXs) {
+function calculateWinner(squares) {
     const lines = [
                    [0, 1, 2],
                    [3, 4, 5],
@@ -143,4 +161,8 @@ function calculateWinner(squares, numOs, numXs) {
     }
     return null;
 }
+
+/* TODO: challenges at the bottom of the react tutorial */
+/* TODO: figure out how to remove elements rendered by react */
+/* TODO: walk through this, https://developer.mozilla.org/en-US/docs/Web/JavaScript/A_re-introduction_to_JavaScript */
 
