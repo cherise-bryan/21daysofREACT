@@ -5,10 +5,12 @@ import './index.css'; // brings in css styles
 // WHERE I STOPPED: https://facebook.github.io/react/tutorial/tutorial.html#wrapping-up
 // TODO: https://facebook.github.io/react/blog/2014/01/02/react-chrome-developer-tools.html
 
+
 function Square(props) {
+    // backgroundColor is javascript way of referring to background-colour
     return (
            // TODO: find out difference between props.onClick() and props.onClick
-            <button className="square" onClick={props.onClick}>
+            <button className="square" onClick={props.onClick} style={{backgroundColor: props.colour}}>
             {props.value}
             </button>
             );
@@ -16,46 +18,57 @@ function Square(props) {
 
 class Board extends React.Component {
 
-    renderSquare(i, lightUp) {
+    renderSquare(i, light) {
+        let colour;
+        if (light) {
+            colour = "#EE82EE";
+        } else {
+            colour = "#FFFFFF";
+        }
         return(
                <Square
                value={this.props.squares[i]}
                onClick={() => this.props.onClick(i)}
-               lightUp={lightUp}
+               colour={colour}
                />
         );
     }
 
     // multiple render's are allowed
     render() {
-        if (this.props.lightUp) {
-            const [i, j, k] = this.props.lightUp;
+        let winner = this.props.winner;
+        let light = Array(9).fill(false);
+        if (winner) {
+            for (let i = 0 ; i < 3 ; i ++ ) {
+                light[winner[i]] = true;
+            }
         }
-        
+        const rowClass = "board-row";
         return (
                 <div>
-                <div className="board-row">
-                {this.renderSquare(0)}
-                {this.renderSquare(1)}
-                {this.renderSquare(2)}
+                <div className={rowClass}>
+                {this.renderSquare(0, light[0])}
+                {this.renderSquare(1, light[1])}
+                {this.renderSquare(2, light[2])}
                 </div>
-                <div className="board-row">
-                {this.renderSquare(3)}
-                {this.renderSquare(4)}
-                {this.renderSquare(5)}
+                <div className={rowClass}>
+                {this.renderSquare(3, light[3])}
+                {this.renderSquare(4, light[4])}
+                {this.renderSquare(5, light[5])}
                 </div>
-                <div className="board-row">
-                {this.renderSquare(6)}
-                {this.renderSquare(7)}
-                {this.renderSquare(8)}
+                <div className={rowClass}>
+                {this.renderSquare(6, light[6])}
+                {this.renderSquare(7, light[7])}
+                {this.renderSquare(8, light[8])}
+
                 </div>
                 </div>
+    
                 );
      
     }
 }
 
-// moved state up from Board -> Game to keep track of the history of the state of the Board
 class Game extends React.Component {
     // constructor is needed to save states
     // only one constructor is allowed
@@ -75,7 +88,6 @@ class Game extends React.Component {
         const history = this.state.history.slice(0, this.state.stepNumber + 1);
         const current = history[this.state.stepNumber];
         const squares = current.squares.slice();
-        
         if (calculateWinner(squares) || squares[i]) {
             return;
         }
@@ -91,6 +103,7 @@ class Game extends React.Component {
         
     }
     jumpTo(step) {
+        
         this.setState({
                       stepNumber: step,
                       xIsNext: (step % 2) ? false : true,
@@ -101,18 +114,23 @@ class Game extends React.Component {
     render() {
         const history = this.state.history;
         const current = history[this.state.stepNumber];
-        const winner = calculateWinner(current.squares
-                                       );
+        const winner = calculateWinner(current.squares);
+        
+        
+        /* TODO: figure out what this JSX code is doing 
+         map function: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/map
+         callback functions:
+         1. http://javascriptissexy.com/understand-javascript-callback-functions-and-use-them/
+         2. https://stackoverflow.com/questions/824234/what-is-a-callback-function
+         3. https://developer.mozilla.org/en-US/docs/Mozilla/js-ctypes/Using_js-ctypes/Declaring_and_Using_Callbacks
+         */
+        /* TODO: chnage colour of li item when it is clicked */
         const moves = history.map((step, move) => {
                                   const now = move ? 'Move #' + move : 'Game start';
-                                  //const x = ' ' + this.state.numXs.toString();
-                                  //const o = ' ' + this.state.numOs.toString();
                                   return (
-                                          <li key={move}>
-                                          <text onClick={() => this.jumpTo(move)}>
+                                          <li key={move} onClick={() => this.jumpTo(move)}>
                                           {now}
-                                          </text>
-                                  </li>
+                                          </li>
                                   )
                                   });
         
@@ -124,8 +142,8 @@ class Game extends React.Component {
                     <div className="game-board">
                     <Board
                     squares={current.squares}
-                    lightUp={winner}
                     onClick={(i) => this.handleClick(i)}
+                    winner={winner}
                     />
                     </div>
                     <div className="game-info">
@@ -183,6 +201,6 @@ function calculateWinner(squares) {
 }
 
 /* TODO: challenges at the bottom of the react tutorial */
-/* TODO: figure out how to remove elements rendered by react */
+/* challenge 1: light up squares of winner! */
 /* TODO: walk through this, https://developer.mozilla.org/en-US/docs/Web/JavaScript/A_re-introduction_to_JavaScript */
 
